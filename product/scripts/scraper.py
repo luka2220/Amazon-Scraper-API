@@ -21,11 +21,7 @@ def search_product(product_name):
     response = requests.get(url, headers=HEADERS)
     if response:
         raw_html = response.text
-        # Parse HTML
         soup = BeautifulSoup(raw_html, "lxml")
-        # logging.debug(soup.prettify())
-        # Change Tor identity for next request
-        # change_tor_identity()
 
 
 def scrape_product(product_id):
@@ -40,10 +36,6 @@ def scrape_product(product_id):
         raw_html = response.text
         # Parse HTML
         soup = BeautifulSoup(raw_html, "lxml")
-
-        # logging.debug(soup.prettify())
-        # Change Tor identity for next request
-        # change_tor_identity()
 
         # Extract product title
         product_title_element = soup.select_one('#productTitle')
@@ -72,7 +64,8 @@ def scrape_product(product_id):
             product_info[title.text.strip()] = value.text.strip()
 
         return {
+            "id": product_id,
             "title": product_title,
             "price": product_price,
-            "product_info": product_info
+            "info": product_info
         }
