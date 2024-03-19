@@ -24,7 +24,8 @@ def product_data(request, product_id):
             'id': serializer.data['id'],
             'title': serializer.data['title'],
             'price': serializer.data['price'],
-            'info': serializer.data['info']
+            'info': serializer.data['info'],
+            'sale_data': serializer.data['sale_data']
         }
 
         return JsonResponse(data=response_data, status=status.HTTP_200_OK, safe=False)

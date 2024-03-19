@@ -15,6 +15,7 @@ class Product(models.Model):
     title = models.TextField(max_length=250)
     price = models.CharField(max_length=20)
     info = models.JSONField(default=dict)
+    sale_data = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

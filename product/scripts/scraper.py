@@ -17,7 +17,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 def search_product(product_name):
     url = f"https://www.amazon.com/s?k={product_name}"
-    # response = make_tor_request(url)
     response = requests.get(url, headers=HEADERS)
     if response:
         raw_html = response.text
@@ -38,34 +37,77 @@ def scrape_product(product_id):
         soup = BeautifulSoup(raw_html, "lxml")
 
         # Extract product title
-        product_title_element = soup.select_one('#productTitle')
-        product_title = product_title_element.text.strip()
+        try:
+            product_title_element = soup.select_one('#productTitle')
+            product_title = product_title_element.text.strip()
+        except AttributeError:
+            product_title = ''
 
         # Extract product price
-        selectors = ['span.aok-offscreen', 'span.a-offscreen']
+        selectors = ['span.aok-offscreen', 'span.a-price-whole', 'span.a-offscreen']
         product_price = None
 
         for selector in selectors:
-            product_price_element = soup.select_one(selector)
-            if product_price_element:
-                product_price = product_price_element.text.strip()[1:]
+            element = soup.select_one(selector)
+            if element and len(element.text) <= 10:
+                if '$' in element.text:
+                    product_price = element.text.strip()[1:]
+                else:
+                    product_price = element.text.strip()
+
+                if product_price[-1] == '.':
+                    product_price += '00'
+
                 break
 
+        # Extract sale data
+
+        try:
+            rating = soup.find("i", attrs={'class': 'a-icon a-icon-star a-star-4-5'}).string.strip()
+
+        except AttributeError:
+
+            try:
+                rating = soup.find("span", attrs={'class': 'a-icon-alt'}).string.strip()
+            except AttributeError:
+                rating = ""
+
+        try:
+            review_count = soup.find("span", attrs={'id': 'acrCustomerReviewText'}).string.strip()
+        except AttributeError:
+            review_count = ""
+
+        try:
+            available = soup.find("div", attrs={'id': 'availability'})
+            available = available.find("span").string.strip()
+        except AttributeError:
+            available = ""
+
         # Extract product info
-        product_info_elements_titles = soup.select('th.prodDetSectionEntry')
-        product_info_elements_values = soup.select('td.prodDetAttrValue')
-
         product_info = {}
+        product_data = soup.select('tr.a-spacing-small')
 
-        for i in range(len(product_info_elements_titles) - 3):
-            title = product_info_elements_titles[i]
-            value = product_info_elements_values[i]
+        for element in product_data:
+            td_elements = element.find_all('td')
 
-            product_info[title.text.strip()] = value.text.strip()
+            if len(td_elements) == 2:
+                key = td_elements[0].text.strip()
+                value = td_elements[1].text.strip()
+
+                product_info[key] = value
+
+        product_sale_info = {
+            "available": available,
+            "num_reviews": review_count,
+            "ratings": rating
+        }
 
         return {
             "id": product_id,
             "title": product_title,
             "price": product_price,
-            "info": product_info
+            "info": product_info,
+            "sale_data": product_sale_info,
         }
+    else:
+        print('Response failed...')
